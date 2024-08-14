@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 const Footer: FC = () => {
   return (
     <footer className="bg-muted text-muted-foreground py-4 px-6">
-      <div className="container mx-auto flex items-center justify-between">
-        <p>&copy; 2024 Library Management System</p>
+      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between">
+        <p className="mb-4 md:mb-0">&copy; 2024 Library Management System</p>
         <nav>
-          <ul className="flex space-x-4">
+          <ul className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
             <li>
               <Link to="#" className="hover:underline">
                 Privacy
