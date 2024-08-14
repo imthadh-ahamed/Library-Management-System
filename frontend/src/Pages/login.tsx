@@ -1,43 +1,62 @@
-import { FC, useState } from "react";
-import { Label, Input, Button } from "../UI/Index";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button, Input } from "../UI/Index";
 import { Link } from "react-router-dom";
 
-const LoginPage: FC = () => {
+const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
-  const validate = () => {
-    const newErrors: { email?: string; password?: string } = {};
-    if (!email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email is invalid";
-    if (!password) newErrors.password = "Password is required";
-    return newErrors;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-    } else {
-      // Handle form submission
-      console.log("Form submitted", { email, password });
+    // Reset error message and errors
+    setErrorMessage("");
+    setErrors({});
+
+    let formIsValid = true;
+    const newErrors: { email?: string; password?: string } = {};
+
+    if (!email) {
+      formIsValid = false;
+      newErrors.email = "Email is required.";
+    }
+
+    if (!password) {
+      formIsValid = false;
+      newErrors.password = "Password is required.";
+    }
+
+    setErrors(newErrors);
+
+    if (formIsValid) {
+      // Dummy check for email and password
+      if (email === "user@example.com" && password === "password123") {
+        // Redirect to home page on successful login
+        navigate("/home");
+      } else {
+        // Show error message on failure
+        setErrorMessage("Invalid email or password. Please try again.");
+      }
     }
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-md space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">Library Management System</h1>
-          <p className="text-muted-foreground">Login to manage your library.</p>
-        </div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md">
+        <h2 className="text-2xl font-bold text-center">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Email
+            </label>
             <Input
               id="email"
               type="email"
@@ -49,10 +68,13 @@ const LoginPage: FC = () => {
               <p className="text-red-500 text-sm">{errors.email}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-            </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Password
+            </label>
             <Input
               id="password"
               type="password"
@@ -68,6 +90,11 @@ const LoginPage: FC = () => {
             Login
           </Button>
         </form>
+        {errorMessage && (
+          <div className="p-4 mt-4 text-sm text-red-700 bg-red-100 rounded">
+            {errorMessage}
+          </div>
+        )}
         <div className="text-center text-sm">
           Don't have an account?{" "}
           <Link to="/signup" className="underline">
