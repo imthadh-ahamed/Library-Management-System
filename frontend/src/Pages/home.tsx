@@ -71,15 +71,20 @@ const Home: FC = () => {
 
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
+    // Prevent default form submission
     e.preventDefault();
+    // Reset errors
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
+        // Set errors if there are any
       setErrors(validationErrors);
     } else {
+        // If in edit mode, update the book details
       if (isEditMode && editIndex !== null) {
         // Update the book details
         const updatedBooks = [...books];
         updatedBooks[editIndex] = { title, author, description };
+        // Set the updated books array
         setBooks(updatedBooks);
       } else {
         // Add a new book
@@ -143,7 +148,7 @@ const Home: FC = () => {
       <main className="flex-1 bg-background px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-6">
           {/* Section for Title and Create Button */}
-          <section className="flex items-center justify-between">
+          <section className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
             <div className="space-y-2 text-center">
               <h2 className="text-3xl font-bold">Book Collections</h2>
             </div>
@@ -200,8 +205,14 @@ const Home: FC = () => {
       <Footer />
 
       {/* Modal for Create/Edit Form */}
-      <CustomModal isOpen={isModalOpen} onRequestClose={closeModal}>
+      <CustomModal
+        // Pass the isOpen prop to open the modal
+        isOpen={isModalOpen}
+        // Pass the onRequestClose prop to close the modal
+        onRequestClose={closeModal}
+      >
         <h2 className="text-xl font-bold mb-4">
+          {/* Change the modal title based on the mode */}
           {isEditMode ? "Edit Book" : "Create New Book"}
         </h2>
         <form onSubmit={handleSubmit}>
@@ -248,6 +259,7 @@ const Home: FC = () => {
             )}
           </div>
           <RedButton type="submit" className="w-full">
+            {/* Change the button text based on the mode */}
             {isEditMode ? "Update" : "Create"}
           </RedButton>
         </form>

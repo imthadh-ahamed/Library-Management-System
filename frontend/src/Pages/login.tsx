@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Button, Input } from "../UI/Index";
 import { Link } from "react-router-dom";
 
-const LoginPage: React.FC = () => {
+interface LoginProps {
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+}
+
+const LoginPage: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
@@ -37,6 +39,7 @@ const LoginPage: React.FC = () => {
       // Dummy check for email and password
       if (email === "user@example.com" && password === "password123") {
         // Redirect to home page on successful login
+        setIsAuthenticated(true);
         navigate("/home");
       } else {
         // Show error message on failure
@@ -47,9 +50,14 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md">
-        <h2 className="text-2xl font-bold text-center">Login</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="w-full max-w-lg p-8 space-y-2 bg-white rounded shadow-md">
+        <h1 className="text-3xl font-bold text-center">
+          Library Management System
+        </h1>
+        <p className="text-muted-foreground text-center">
+          Login to manage your library.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="email"
