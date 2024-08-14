@@ -1,6 +1,11 @@
 import { Label } from "./Label";
 import { Input } from "./Input";
-import { Button, RedButton, BlueButton, GreenButton } from "./Button";
+import {
+  Button,
+  RedButton,
+  BlueButton,
+  GreenButton,
+} from "./Button";
 import {
   Table,
   TableHeader,
