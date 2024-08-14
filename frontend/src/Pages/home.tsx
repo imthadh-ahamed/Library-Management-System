@@ -11,12 +11,14 @@ import {
   TableCell,
   TableHead,
   Label,
-  Input
+  Input,
 } from "../UI/Index";
 
 const Home: FC = () => {
   // State for modal open/close
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // State to track if the form is in edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
   // State for form title inputs
   const [title, setTitle] = useState("");
   // State for form author inputs
@@ -29,10 +31,33 @@ const Home: FC = () => {
     author?: string;
     description?: string;
   }>({});
+  // State to track which book is being edited
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  // Dummy data for books
+  const [books, setBooks] = useState([
+    {
+      title: "The Great Gatsby",
+      author: "F. Scott Fitzgerald",
+      description: "A novel about the Roaring Twenties.",
+    },
+    {
+      title: "To Kill a Mockingbird",
+      author: "Harper Lee",
+      description: "A story of racial injustice in the American South.",
+    },
+    {
+      title: "1984",
+      author: "George Orwell",
+      description: "A dystopian novel about a totalitarian society.",
+    },
+  ]);
+
+  // State for delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   // Function to validate form inputs
   const validate = () => {
-    // Create a new object to store the errors
     const newErrors: {
       title?: string;
       author?: string;
@@ -41,31 +66,75 @@ const Home: FC = () => {
     if (!title) newErrors.title = "Title is required";
     if (!author) newErrors.author = "Author is required";
     if (!description) newErrors.description = "Description is required";
-    //  Return the new errors object
     return newErrors;
   };
 
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
-    // Prevent the default form submission behavior
     e.preventDefault();
-    // Validate the form inputs
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
-      //  Set the errors state if there are validation errors
       setErrors(validationErrors);
     } else {
-      // Handle form submission
-      console.log("Form submitted", { title, author, description });
-      // Close the modal after submission
+      if (isEditMode && editIndex !== null) {
+        // Update the book details
+        const updatedBooks = [...books];
+        updatedBooks[editIndex] = { title, author, description };
+        setBooks(updatedBooks);
+      } else {
+        // Add a new book
+        setBooks([...books, { title, author, description }]);
+      }
       setIsModalOpen(false);
+      setIsEditMode(false);
+      setEditIndex(null);
+      setTitle("");
+      setAuthor("");
+      setDescription("");
     }
   };
 
   // Function to close the modal
   const closeModal = () => {
-    // Close the modal
     setIsModalOpen(false);
+    setTitle("");
+    setAuthor("");
+    setDescription("");
+    setIsEditMode(false);
+    setEditIndex(null);
+    setErrors({});
+  };
+
+  // Function to handle the Edit button click
+  const handleEdit = (index: number) => {
+    setIsEditMode(true);
+    setEditIndex(index);
+    setTitle(books[index].title);
+    setAuthor(books[index].author);
+    setDescription(books[index].description);
+    setIsModalOpen(true);
+  };
+
+  // Function to handle the Delete button click
+  const handleDelete = (index: number) => {
+    setDeleteIndex(index);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Function to confirm deletion
+  const confirmDelete = () => {
+    if (deleteIndex !== null) {
+      const updatedBooks = books.filter((_, index) => index !== deleteIndex);
+      setBooks(updatedBooks);
+      setIsDeleteModalOpen(false);
+      setDeleteIndex(null);
+    }
+  };
+
+  // Function to close the delete modal
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setDeleteIndex(null);
   };
 
   return (
@@ -79,15 +148,20 @@ const Home: FC = () => {
               <h2 className="text-3xl font-bold">Book Collections</h2>
             </div>
             <div>
-              <GreenButton onClick={() => setIsModalOpen(true)}>
+              <GreenButton
+                onClick={() => {
+                  setIsEditMode(false);
+                  setIsModalOpen(true);
+                }}
+              >
                 Create
               </GreenButton>
             </div>
           </section>
 
           {/* Table Section */}
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
+          <div className="border rounded-lg max-h-screen overflow-y-auto">
+            <Table className="">
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
@@ -97,46 +171,27 @@ const Home: FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {/* Row 1 */}
-                <TableRow>
-                  <TableCell className="font-medium">
-                    The Great Gatsby
-                  </TableCell>
-                  <TableCell>F. Scott Fitzgerald</TableCell>
-                  <TableCell>A novel about the Roaring Twenties.</TableCell>
-                  <TableCell className="text-right">
-                    <BlueButton className="m-1">Edit</BlueButton>
-                    <RedButton className="m-1">Delete</RedButton>
-                  </TableCell>
-                </TableRow>
-
-                {/* Row 2 */}
-                <TableRow>
-                  <TableCell className="font-medium">
-                    To Kill a Mockingbird
-                  </TableCell>
-                  <TableCell>Harper Lee</TableCell>
-                  <TableCell>
-                    A story of racial injustice in the American South.
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <BlueButton className="m-1">Edit</BlueButton>
-                    <RedButton className="m-1">Delete</RedButton>
-                  </TableCell>
-                </TableRow>
-
-                {/* Row 3 */}
-                <TableRow>
-                  <TableCell className="font-medium">1984</TableCell>
-                  <TableCell>George Orwell</TableCell>
-                  <TableCell>
-                    A dystopian novel about a totalitarian society.
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <BlueButton className="m-1">Edit</BlueButton>
-                    <RedButton className="m-1">Delete</RedButton>
-                  </TableCell>
-                </TableRow>
+                {books.map((book, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{book.title}</TableCell>
+                    <TableCell>{book.author}</TableCell>
+                    <TableCell>{book.description}</TableCell>
+                    <TableCell className="text-right">
+                      <BlueButton
+                        className="m-1"
+                        onClick={() => handleEdit(index)}
+                      >
+                        Edit
+                      </BlueButton>
+                      <RedButton
+                        className="m-1"
+                        onClick={() => handleDelete(index)}
+                      >
+                        Delete
+                      </RedButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
@@ -144,9 +199,11 @@ const Home: FC = () => {
       </main>
       <Footer />
 
-      {/* Modal for Create Form */}
+      {/* Modal for Create/Edit Form */}
       <CustomModal isOpen={isModalOpen} onRequestClose={closeModal}>
-        <h2 className="text-xl font-bold mb-4">Create New Book</h2>
+        <h2 className="text-xl font-bold mb-4">
+          {isEditMode ? "Edit Book" : "Create New Book"}
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <Label htmlFor="title">Title</Label>
@@ -191,9 +248,21 @@ const Home: FC = () => {
             )}
           </div>
           <RedButton type="submit" className="w-full">
-            Create
+            {isEditMode ? "Update" : "Create"}
           </RedButton>
         </form>
+      </CustomModal>
+
+      {/* Modal for Delete Confirmation */}
+      <CustomModal isOpen={isDeleteModalOpen} onRequestClose={closeDeleteModal}>
+        <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
+        <p>Are you sure you want to delete this book?</p>
+        <div className="flex justify-end mt-4">
+          <GreenButton className="mr-2" onClick={closeDeleteModal}>
+            Cancel
+          </GreenButton>
+          <RedButton onClick={confirmDelete}>Confirm</RedButton>
+        </div>
       </CustomModal>
     </div>
   );
