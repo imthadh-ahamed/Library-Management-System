@@ -130,3 +130,5 @@ dist
 .pnp.*
 
 /backend/.vs
+/backend/bin
+/backend/obj
