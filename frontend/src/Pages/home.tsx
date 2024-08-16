@@ -1,4 +1,5 @@
-import { FC, useState } from "react";
+import React, { FC, useState, useEffect } from "react";
+import axios from "axios";
 import { Header, Footer, CustomModal } from "../Components/index";
 import {
   BlueButton,
@@ -13,104 +14,90 @@ import {
   Label,
   Input,
 } from "../UI/Index";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+interface Book {
+  bookId: number;
+  title: string;
+  author: string;
+  description: string;
+}
 
 const Home: FC = () => {
-  // State for modal open/close
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // State to track if the form is in edit mode
   const [isEditMode, setIsEditMode] = useState(false);
-  // State for form title inputs
   const [title, setTitle] = useState("");
-  // State for form author inputs
   const [author, setAuthor] = useState("");
-  // State for form description inputs
   const [description, setDescription] = useState("");
-  // State for form errors
   const [errors, setErrors] = useState<{
     title?: string;
     author?: string;
     description?: string;
   }>({});
-  // State to track which book is being edited
   const [editIndex, setEditIndex] = useState<number | null>(null);
-  // Dummy data for books
-  const [books, setBooks] = useState([
-    {
-      title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      description: "A novel about the Roaring Twenties.",
-    },
-    {
-      title: "To Kill a Mockingbird",
-      author: "Harper Lee",
-      description: "A story of racial injustice in the American South.",
-    },
-    {
-      title: "1984",
-      author: "George Orwell",
-      description: "A dystopian novel about a totalitarian society.",
-    },
-  ]);
-
-  // State for delete confirmation modal
+  const [books, setBooks] = useState<Book[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
-  // Function to validate form inputs
+  useEffect(() => {
+    axios
+      .get("https://localhost:7105/api/books/get")
+      .then((response) => setBooks(response.data))
+      .catch((error) => console.error("Error fetching books:", error));
+  }, []);
+
   const validate = () => {
-    const newErrors: {
-      title?: string;
-      author?: string;
-      description?: string;
-    } = {};
+    const newErrors: { title?: string; author?: string; description?: string } =
+      {};
     if (!title) newErrors.title = "Title is required";
     if (!author) newErrors.author = "Author is required";
     if (!description) newErrors.description = "Description is required";
     return newErrors;
   };
 
-  // Function to handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    // Prevent default form submission
-    e.preventDefault();
-    // Reset errors
+  const handleSubmit = () => {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
-        // Set errors if there are any
       setErrors(validationErrors);
-    } else {
-        // If in edit mode, update the book details
-      if (isEditMode && editIndex !== null) {
-        // Update the book details
-        const updatedBooks = [...books];
-        updatedBooks[editIndex] = { title, author, description };
-        // Set the updated books array
-        setBooks(updatedBooks);
-      } else {
-        // Add a new book
-        setBooks([...books, { title, author, description }]);
-      }
-      setIsModalOpen(false);
-      setIsEditMode(false);
-      setEditIndex(null);
-      setTitle("");
-      setAuthor("");
-      setDescription("");
+      return;
+    }
+    isEditMode && editIndex !== null ? updateBook() : createBook();
+    closeModal();
+  };
+
+  const createBook = () => {
+    const newBook = { title, author, description };
+    axios
+      .post("https://localhost:7105/api/books/create", newBook)
+      .then((response) => {
+        setBooks([...books, response.data]);
+        toast.success("Book created successfully!", {
+          position: "bottom-left",
+        });
+      })
+      .catch((error) => console.error("Error creating book:", error));
+  };
+
+  const updateBook = () => {
+    if (editIndex !== null) {
+      const updatedBook = { ...books[editIndex], title, author, description };
+      axios
+        .put(
+          `https://localhost:7105/api/books/update/${updatedBook.bookId}`,
+          updatedBook
+        )
+        .then((response) => {
+          setBooks(books.map((b, i) => (i === editIndex ? response.data : b)));
+          toast.success("Book updated successfully!", {
+            position: "bottom-left",
+          });
+          window.location.reload(); // This line is typically not recommended; you might want to remove this and handle state updates locally
+        })
+        .catch((error) => console.error("Error updating book:", error));
     }
   };
 
-  // Function to close the modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setTitle("");
-    setAuthor("");
-    setDescription("");
-    setIsEditMode(false);
-    setEditIndex(null);
-    setErrors({});
-  };
-
-  // Function to handle the Edit button click
   const handleEdit = (index: number) => {
     setIsEditMode(true);
     setEditIndex(index);
@@ -120,53 +107,51 @@ const Home: FC = () => {
     setIsModalOpen(true);
   };
 
-  // Function to handle the Delete button click
   const handleDelete = (index: number) => {
-    setDeleteIndex(index);
+    setDeleteIndex(books[index].bookId);
     setIsDeleteModalOpen(true);
   };
 
-  // Function to confirm deletion
   const confirmDelete = () => {
     if (deleteIndex !== null) {
-      const updatedBooks = books.filter((_, index) => index !== deleteIndex);
-      setBooks(updatedBooks);
-      setIsDeleteModalOpen(false);
-      setDeleteIndex(null);
+      axios
+        .delete(`https://localhost:7105/api/books/delete/${deleteIndex}`)
+        .then(() => {
+          setBooks(books.filter((book) => book.bookId !== deleteIndex));
+          toast.success("Book deleted successfully!", {
+            position: "bottom-left",
+          });
+          closeDeleteModal();
+        })
+        .catch((error) => console.error("Error deleting book:", error));
     }
   };
 
-  // Function to close the delete modal
-  const closeDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setDeleteIndex(null);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsEditMode(false);
+    setEditIndex(null);
+    setTitle("");
+    setAuthor("");
+    setDescription("");
+    setErrors({});
   };
+
+  const closeDeleteModal = () => setIsDeleteModalOpen(false);
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 bg-background px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-6">
-          {/* Section for Title and Create Button */}
           <section className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-            <div className="space-y-2 text-center">
-              <h2 className="text-3xl font-bold">Book Collections</h2>
-            </div>
-            <div>
-              <GreenButton
-                onClick={() => {
-                  setIsEditMode(false);
-                  setIsModalOpen(true);
-                }}
-              >
-                Create
-              </GreenButton>
-            </div>
+            <h2 className="text-3xl font-bold text-center">Book Collections</h2>
+            <GreenButton onClick={() => setIsModalOpen(true)}>
+              Create
+            </GreenButton>
           </section>
-
-          {/* Table Section */}
           <div className="border rounded-lg max-h-screen overflow-y-auto">
-            <Table className="">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
@@ -177,7 +162,7 @@ const Home: FC = () => {
               </TableHeader>
               <TableBody>
                 {books.map((book, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={book.bookId}>
                     <TableCell className="font-medium">{book.title}</TableCell>
                     <TableCell>{book.author}</TableCell>
                     <TableCell>{book.description}</TableCell>
@@ -205,26 +190,22 @@ const Home: FC = () => {
       <Footer />
 
       {/* Modal for Create/Edit Form */}
-      <CustomModal
-        // Pass the isOpen prop to open the modal
-        isOpen={isModalOpen}
-        // Pass the onRequestClose prop to close the modal
-        onRequestClose={closeModal}
-      >
+      <CustomModal isOpen={isModalOpen} onRequestClose={closeModal}>
         <h2 className="text-xl font-bold mb-4">
-          {/* Change the modal title based on the mode */}
           {isEditMode ? "Edit Book" : "Create New Book"}
         </h2>
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
           <div className="mb-4">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
-              name="title"
-              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
             />
             {errors.title && (
               <p className="text-red-500 text-sm">{errors.title}</p>
@@ -234,11 +215,8 @@ const Home: FC = () => {
             <Label htmlFor="author">Author</Label>
             <Input
               id="author"
-              name="author"
-              type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              required
             />
             {errors.author && (
               <p className="text-red-500 text-sm">{errors.author}</p>
@@ -248,20 +226,16 @@ const Home: FC = () => {
             <Label htmlFor="description">Description</Label>
             <Input
               id="description"
-              name="description"
-              type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              required
             />
             {errors.description && (
               <p className="text-red-500 text-sm">{errors.description}</p>
             )}
           </div>
-          <RedButton type="submit" className="w-full">
-            {/* Change the button text based on the mode */}
+          <GreenButton type="submit" className="w-full">
             {isEditMode ? "Update" : "Create"}
-          </RedButton>
+          </GreenButton>
         </form>
       </CustomModal>
 
