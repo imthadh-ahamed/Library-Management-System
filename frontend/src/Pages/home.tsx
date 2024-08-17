@@ -17,6 +17,7 @@ import {
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Define the Book interface
 interface Book {
   bookId: number;
   title: string;
@@ -25,6 +26,7 @@ interface Book {
 }
 
 const Home: FC = () => {
+  // Define the state variables
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [title, setTitle] = useState("");
@@ -40,47 +42,65 @@ const Home: FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
+  // Fetch the books from the API
   useEffect(() => {
     axios
       .get("https://localhost:7105/api/books/get")
+      // Set the books state variable
       .then((response) => setBooks(response.data))
+      // Log any errors
       .catch((error) => console.error("Error fetching books:", error));
   }, []);
 
+  // Validate the form fields
   const validate = () => {
+    // Create a new errors object
     const newErrors: { title?: string; author?: string; description?: string } =
       {};
+    // Check if the attributes are empty or not
     if (!title) newErrors.title = "Title is required";
     if (!author) newErrors.author = "Author is required";
     if (!description) newErrors.description = "Description is required";
     return newErrors;
   };
 
+  // Handle the form submission
   const handleSubmit = () => {
+    // Validate the form fields
     const validationErrors = validate();
+    // If there are errors, set the errors state variable and return
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
+    // If the form is in edit mode, update the book
     isEditMode && editIndex !== null ? updateBook() : createBook();
+    // Close the modal
     closeModal();
   };
 
+  // Create a new book
   const createBook = () => {
+    // Create a new book object
     const newBook = { title, author, description };
     axios
       .post("https://localhost:7105/api/books/create", newBook)
       .then((response) => {
+        // Add the new book to the books state variable
         setBooks([...books, response.data]);
+        // Show a success toast
         toast.success("Book created successfully!", {
           position: "bottom-left",
         });
       })
+      // Log any errors
       .catch((error) => console.error("Error creating book:", error));
   };
 
+  // Update an existing book
   const updateBook = () => {
     if (editIndex !== null) {
+      // Create an updated book object
       const updatedBook = { ...books[editIndex], title, author, description };
       axios
         .put(
@@ -88,46 +108,61 @@ const Home: FC = () => {
           updatedBook
         )
         .then((response) => {
+          // Update the book in the books state variable
           setBooks(books.map((b, i) => (i === editIndex ? response.data : b)));
+          // Show a success toast
           toast.success("Book updated successfully!", {
             position: "bottom-left",
           });
-          window.location.reload(); // This line is typically not recommended; you might want to remove this and handle state updates locally
+          window.location.reload(); 
         })
+        // Log any errors
         .catch((error) => console.error("Error updating book:", error));
     }
   };
 
+  // Handle the edit action
   const handleEdit = (index: number) => {
+    // Set the form fields to the selected book
     setIsEditMode(true);
+    // Set the edit index
     setEditIndex(index);
+    // Set the form fields to the selected book
     setTitle(books[index].title);
     setAuthor(books[index].author);
     setDescription(books[index].description);
     setIsModalOpen(true);
   };
 
+  // Handle the delete action
   const handleDelete = (index: number) => {
+    // Set the delete index
     setDeleteIndex(books[index].bookId);
+    // Open the delete modal
     setIsDeleteModalOpen(true);
   };
 
+  // Confirm the delete action
   const confirmDelete = () => {
     if (deleteIndex !== null) {
       axios
         .delete(`https://localhost:7105/api/books/delete/${deleteIndex}`)
         .then(() => {
+          // Remove the book from the books state variable
           setBooks(books.filter((book) => book.bookId !== deleteIndex));
+          // Show a success toast
           toast.success("Book deleted successfully!", {
             position: "bottom-left",
           });
           closeDeleteModal();
         })
+        // Log any errors
         .catch((error) => console.error("Error deleting book:", error));
     }
   };
 
   const closeModal = () => {
+    // Reset the form fields
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditIndex(null);
@@ -137,6 +172,7 @@ const Home: FC = () => {
     setErrors({});
   };
 
+  // Close the delete modal
   const closeDeleteModal = () => setIsDeleteModalOpen(false);
 
   return (
@@ -150,7 +186,7 @@ const Home: FC = () => {
               Create
             </GreenButton>
           </section>
-          <div className="border rounded-lg max-h-screen overflow-y-auto">
+          <div className="border rounded-lg max-h-96 overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -161,6 +197,7 @@ const Home: FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                 {/* Map over the books and render a table row for each book */}
                 {books.map((book, index) => (
                   <TableRow key={book.bookId}>
                     <TableCell className="font-medium">{book.title}</TableCell>
