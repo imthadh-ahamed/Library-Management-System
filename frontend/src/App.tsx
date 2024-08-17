@@ -1,10 +1,32 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+// import { Navigate, Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Login, Signup, Home } from "./Pages";
-import { useState } from "react";
 import { PrivateRoute } from "./Components";
+// import Cookies from "js-cookie";
 
 function App() {
-   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
+
+  // Check if the user is authenticated
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  // const PrivateRoute = () => {
+  //   const auth = Cookies.get("token");
+  //   return auth ? <Outlet /> : <Navigate to="/" />;
+  // };
+
+  // const PublicRoute = () => {
+  //   const auth = Cookies.get("token");
+  //   return auth ? <Navigate to="/home" /> : <Outlet />;
+  // };
 
   return (
     <BrowserRouter>
@@ -24,6 +46,20 @@ function App() {
           }
         />
       </Routes>
+
+
+      {/* <Routes>
+        <Route path="" element={<PublicRoute />}>
+          <Route
+            path="/"
+            element={<Login setIsAuthenticated={setIsAuthenticated} />}
+          />
+          <Route path="/signup" element={<Signup />} />
+        </Route>
+        <Route path='' element={<PrivateRoute />}>
+          <Route path='/home' element={<Home />}/>
+        </Route>
+      </Routes> */}
     </BrowserRouter>
   );
 }
