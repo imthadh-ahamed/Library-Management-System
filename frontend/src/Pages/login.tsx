@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Input } from "../UI/Index";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
+// Define the props for the Login component
 interface LoginProps {
   setIsAuthenticated: (isAuthenticated: boolean) => void;
 }
@@ -10,17 +12,24 @@ interface LoginProps {
 const LoginPage: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
+  // Handle the form submission
   const handleSubmit = async (e: React.FormEvent) => {
+    // Prevent the default form submission
     e.preventDefault();
-    // Reset error message and errors
     setErrorMessage("");
     setErrors({});
 
+    console.log({ email, password });
+
+    // Validate the form fields
     let formIsValid = true;
+    // Create a new errors object
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
@@ -36,14 +45,41 @@ const LoginPage: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
     setErrors(newErrors);
 
     if (formIsValid) {
-      // Dummy check for email and password
-      if (email === "user@example.com" && password === "password123") {
-        // Redirect to home page on successful login
-        setIsAuthenticated(true);
-        navigate("/home");
-      } else {
-        // Show error message on failure
-        setErrorMessage("Invalid email or password. Please try again.");
+      try {
+        const response = await axios.post(
+          "https://localhost:7105/api/users/login",
+          {
+            email,
+            password,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          // Extract the JWT from the response
+          const { token } = response.data;
+          // Save the JWT to localStorage
+          localStorage.setItem("token", token);
+          setIsAuthenticated(true);
+          navigate("/home");
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          console.log(error.response.data); // Logs the error message from the server
+          console.log(error.response.status); // Logs the status code
+          console.log(error.response.headers); // Logs the response headers
+          setErrorMessage(
+            // Set the error message state variable
+            error.response.data.message ||
+              "Invalid email or password. Please try again."
+          );
+        } else {
+          setErrorMessage("Something went wrong. Please try again later.");
+        }
       }
     }
   };
