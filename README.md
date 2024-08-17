@@ -97,9 +97,4 @@ dotnet run
         <li><strong>Update a Book:</strong> Click on a book record to edit its details.</li>
         <li><strong>Delete a Book:</strong> Remove a book from the list using the delete option.</li>
     </ol>
-  <img src="https://github.com/imthadh-ahamed/Library-Management-System/blob/main/Assests/6.png" style="width: 400px;">
-</p>
-<p>
-  <img src="https://github.com/imthadh-ahamed/Library-Management-System/blob/main/Assests/7.png" style="width: 400px;">
-</p>
 
