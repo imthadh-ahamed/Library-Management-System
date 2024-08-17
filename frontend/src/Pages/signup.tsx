@@ -1,9 +1,9 @@
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
+import axios from "axios";
 import { Label, Input, Button } from "../UI/Index";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const SignUpPage: FC = () => {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{
@@ -11,10 +11,11 @@ const SignUpPage: FC = () => {
     email?: string;
     password?: string;
   }>({});
+  const navigate = useNavigate();
 
+  // Validate the form fields
   const validate = () => {
     const newErrors: { name?: string; email?: string; password?: string } = {};
-    if (!name) newErrors.name = "Name is required";
     if (!email) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email is invalid";
     if (!password) newErrors.password = "Password is required";
@@ -23,14 +24,38 @@ const SignUpPage: FC = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Handle the form submission
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validate the form fields
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
+      // If there are errors, set the errors state variable and return
       setErrors(validationErrors);
-    } else {
-      // Handle form submission
-      console.log("Form submitted", { name, email, password });
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "https://localhost:7105/api/users/register",
+        {
+          Email: email, // Ensure casing matches the API
+          Password: password, // Ensure casing matches the API
+        }
+      );
+
+      if (response.status === 200) {
+        alert("Account Created");
+        navigate("/");
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Handle API errors
+        setErrors({ email: error.response.data.message || "Signup failed" });
+      } else {
+        // Handle other errors
+        setErrors({ email: "An error occurred. Please try again." });
+      }
     }
   };
 
@@ -44,18 +69,6 @@ const SignUpPage: FC = () => {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name}</p>
-            )}
-          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
